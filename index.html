@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Photo Chronicle | Editorial Photojournalism Gallery</title>
+    <meta name="description" content="A premium, interactive news-style photography gallery. Upload, view, and explore captivating visual stories from the frontiers of reality.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Newspaper Header -->
+    <header class="newspaper-header">
+        <div class="header-top-meta">
+            <span id="header-date">Monday, June 29, 2026</span>
+            <span class="header-weather"><i class="fa-solid fa-cloud-sun"></i> 22°C / 72°F</span>
+            <span class="header-edition">Edition: Global Photojournalism</span>
+        </div>
+        
+        <div class="header-main-title">
+            <h1 class="logo-text">The Photo Chronicle</h1>
+        </div>
+        
+        <div class="header-motto">
+            <span>"Visual Journalism from the Frontiers of Reality"</span>
+        </div>
+        
+        <div class="header-utility-bar">
+            <!-- Theme Toggle & Upload Trigger -->
+            <button id="theme-toggle-btn" class="utility-btn" aria-label="Toggle dark mode">
+                <i class="fa-solid fa-moon"></i>
+                <span class="btn-text">Dark Mode</span>
+            </button>
+            <button id="open-upload-btn" class="utility-btn btn-primary" aria-label="Submit Photojournalism">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Publish Photo</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- News Ticker Tape (Breaking News Ticker) -->
+    <div class="news-ticker-container">
+        <span class="ticker-title"><i class="fa-solid fa-bolt"></i> Wire Feed</span>
+        <div class="news-ticker" id="ticker-feed">
+            <!-- Populated dynamically via JS -->
+        </div>
+    </div>
+
+    <!-- Navigation & Filter Bar -->
+    <nav class="news-nav-bar">
+        <div class="filters-container">
+            <button class="filter-tab active" data-category="all">All Stories</button>
+            <button class="filter-tab" data-category="space">Space</button>
+            <button class="filter-tab" data-category="urbanism">Urbanism</button>
+            <button class="filter-tab" data-category="science">Science</button>
+            <button class="filter-tab" data-category="uploaded">Community Uploads</button>
+        </div>
+        <div class="search-box-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="news-search-input" placeholder="Search headlines, journalists, locations..." aria-label="Search stories">
+            <button id="clear-search-btn" class="clear-search" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="newspaper-body">
+        <div id="results-meta" class="results-meta-bar hidden">
+            <span id="results-count-text">Found 0 stories matching your query.</span>
+            <button id="reset-filters-btn" class="btn-link">Reset Filters</button>
+        </div>
+
+        <!-- News Gallery Grid -->
+        <div id="news-gallery-grid" class="news-grid">
+            <!-- Dynamic elements will be inserted here by app.js -->
+        </div>
+    </main>
+
+    <!-- Upload Photo Modal -->
+    <div id="upload-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <button id="close-upload-btn" class="modal-close-btn" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="modal-title" class="modal-heading">Publish Photojournalism</h2>
+            <p class="modal-subheading">Submit your image, craft a compelling headline, and document the story behind the frame.</p>
+            
+            <form id="upload-form" class="upload-form">
+                <!-- Image Upload Zone -->
+                <div class="form-group full-width">
+                    <label class="form-label">Photo Capture</label>
+                    <div id="drop-zone" class="drop-zone">
+                        <input type="file" id="file-input" accept="image/*" required style="display: none;">
+                        <div id="drop-zone-prompt" class="drop-zone-content">
+                            <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                            <p class="drop-primary">Drag & Drop photo here, or <span>browse files</span></p>
+                            <p class="drop-secondary">Supports JPEG, PNG, WEBP (Max 5MB)</p>
+                        </div>
+                        <div id="drop-zone-preview" class="drop-zone-preview-container hidden">
+                            <img id="image-preview" src="" alt="Selected photo preview">
+                            <button type="button" id="remove-preview-btn" class="btn-remove-photo"><i class="fa-solid fa-trash-can"></i> Remove Photo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Headline -->
+                <div class="form-group full-width">
+                    <label for="input-headline" class="form-label">Headline / Title</label>
+                    <input type="text" id="input-headline" placeholder="e.g. Breaking: Solar Probe Enters Outer Corona" required maxlength="100">
+                </div>
+
+                <!-- Journalist (Photographer) -->
+                <div class="form-group">
+                    <label for="input-photographer" class="form-label">Photojournalist (Credit)</label>
+                    <input type="text" id="input-photographer" placeholder="e.g. Jane Doe" required maxlength="50">
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <label for="select-category" class="form-label">Section / Category</label>
+                    <select id="select-category" required>
+                        <option value="" disabled selected>Select category</option>
+                        <option value="space">Space Exploration</option>
+                        <option value="urbanism">Urbanism & Eco</option>
+                        <option value="science">Scientific Discovery</option>
+                    </select>
+                </div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label for="input-location" class="form-label">Location</label>
+                    <input type="text" id="input-location" placeholder="e.g. Geneva, Switzerland" required maxlength="80">
+                </div>
+
+                <!-- Retraction Password -->
+                <div class="form-group">
+                    <label for="input-password" class="form-label">Retraction Password</label>
+                    <input type="password" id="input-password" placeholder="Key to retract this story" required maxlength="30">
+                </div>
+
+                <!-- Description / Caption -->
+                <div class="form-group full-width">
+                    <label for="textarea-description" class="form-label">Article / Narrative / Caption</label>
+                    <textarea id="textarea-description" placeholder="Write the reporting detail or the background context of this photo. What makes this a headline? Describe the scene in depth..." required maxlength="600"></textarea>
+                    <div class="textarea-counter"><span id="char-counter">0</span> / 600 characters</div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions full-width">
+                    <button type="button" id="cancel-upload-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="submit-btn" class="btn-primary">
+                        <i class="fa-solid fa-print"></i> Publish to Feed
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Photo Detail Lightbox Modal -->
+    <div id="lightbox-modal" class="modal-overlay" aria-hidden="true">
+        <div class="lightbox-content-wrapper" role="dialog" aria-modal="true">
+            <button id="close-lightbox-btn" class="lightbox-close-btn" aria-label="Close details"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="lightbox-grid">
+                <!-- Left/Top: Image Display -->
+                <div class="lightbox-image-section">
+                    <img id="lightbox-img" src="" alt="High resolution news photo">
+                </div>
+                
+                <!-- Right/Bottom: Editorial Sidebar -->
+                <div class="lightbox-sidebar">
+                    <div class="sidebar-header">
+                        <span id="lightbox-category" class="category-badge">Science</span>
+                        <span id="lightbox-date" class="sidebar-date">June 29, 2026</span>
+                    </div>
+
+                    <h2 id="lightbox-headline" class="sidebar-headline">News Headline</h2>
+                    
+                    <div class="sidebar-meta-list">
+                        <div class="meta-item">
+                            <i class="fa-solid fa-camera"></i>
+                            <span class="meta-label">Photo Credit:</span>
+                            <span id="lightbox-photographer" class="meta-value">Marcus Vance</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span class="meta-label">Location:</span>
+                            <span id="lightbox-location" class="meta-value">Cape Canaveral, USA</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span class="meta-label">Camera Settings:</span>
+                            <span id="lightbox-exif" class="meta-value">Leica M11 • f/2.8 • 1/500s • ISO 100</span>
+                        </div>
+                    </div>
+
+                    <hr class="sidebar-divider">
+
+                    <div class="sidebar-body" id="lightbox-description">
+                        Full article text goes here...
+                    </div>
+
+                    <hr class="sidebar-divider">
+
+                    <!-- Actions -->
+                    <div class="sidebar-actions">
+                        <a id="download-photo-btn" href="#" download="photo_chronicle.jpg" class="sidebar-action-btn action-download">
+                            <i class="fa-solid fa-download"></i> Download Image
+                        </a>
+                        <button id="share-photo-btn" class="sidebar-action-btn action-share">
+                            <i class="fa-solid fa-share-nodes"></i> Share
+                        </button>
+                        <button id="delete-photo-btn" class="sidebar-action-btn action-delete hidden">
+                            <i class="fa-solid fa-trash-can"></i> Retract Story
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast-notification" class="toast-container hidden" role="alert" aria-live="assertive">
+        <div class="toast-card">
+            <div class="toast-icon-wrapper"><i id="toast-icon" class="fa-solid fa-check"></i></div>
+            <div class="toast-message-wrapper">
+                <p id="toast-title" class="toast-headline">Success</p>
+                <p id="toast-body" class="toast-desc">Your news file was published successfully.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editorial Footer -->
+    <footer class="newspaper-footer">
+        <div class="footer-divider-thick"></div>
+        <div class="footer-content">
+            <p class="footer-logo">The Photo Chronicle</p>
+            <p class="footer-text">Established 2026. All visual materials are published under editorial license. Real-time updates delivered to your browser.</p>
+            <p class="footer-copy">&copy; 2026 The Photo Chronicle. Independent Press Syndicate.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript logic -->
+    <script src="app.js"></script>
+</body>
+</html>

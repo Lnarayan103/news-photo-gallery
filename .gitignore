@@ -1,0 +1,6 @@
+# Ignore all hidden system files and configurations in /root
+.*
+!/.gitignore
+
+# Ignore logs
+*.log
