@@ -1,43 +1,6 @@
 /* ==========================================================================
-   THE PHOTO CHRONICLE - MAIN LOGIC (UPGRADED EDITORIAL SUITE)
+   THE PHOTO CHRONICLE - MAIN LOGIC (UPGRADED EDITORIAL SUITE WITH BACKEND)
    ========================================================================== */
-
-// Base Editorial Stories with EXIF Camera settings
-const INITIAL_STORIES = [
-    {
-        id: "story-space-launch",
-        title: "Deep Space Exploration: Ares VII Mission Launches Into the Dusk",
-        category: "space",
-        image: "assets/images/space_launch.jpg",
-        date: "June 29, 2026",
-        photographer: "Marcus Vance",
-        location: "Cape Canaveral, USA",
-        exif: "Leica M11 • Summilux 35mm • f/1.4 • 1/250s • ISO 64",
-        description: "In a historic display of aerospace engineering, the Ares VII rocket successfully lifted off from Pad 39B at Cape Canaveral at 19:42 UTC. The mission aims to deploy a network of deep-space communications satellites that will form the backbone of future crewed Martian voyages. Over 10,000 spectators gathered along the coast to witness the dramatic ascent as the launch vehicle pierced the twilight sky."
-    },
-    {
-        id: "story-smart-city",
-        title: "The Green Renaissance: Arcadia District Redefines Sustainable Urbanism",
-        category: "urbanism",
-        image: "assets/images/smart_city.jpg",
-        date: "June 28, 2026",
-        photographer: "Elena Rostova",
-        location: "Arcadia Metro",
-        exif: "Sony A7R V • FE 24-70mm GM II • f/5.6 • 1/160s • ISO 100",
-        description: "Spanning over 200 hectares of high-density mixed-use development, the newly completed Arcadia District has officially achieved net-zero carbon operations. Integrating vertical forests, integrated wind-microturbines, and an autonomous magnetic transit network, the district demonstrates a revolutionary model of modern coexistence between nature and human density. Municipal planners predict a 40% reduction in heating costs and zero reliance on fossil fuels."
-    },
-    {
-        id: "story-deep-sea",
-        title: "Bioluminescent Marvels: New Species Discovered in the Mariana Trench",
-        category: "science",
-        image: "assets/images/deep_sea_discovery.jpg",
-        date: "June 25, 2026",
-        photographer: "Dr. Alistair Webb",
-        location: "Mariana Trench, Pacific",
-        exif: "Hasselblad X2D • XCD 38mm f/2.5 • f/2.8 • 1/60s • ISO 800",
-        description: "Operating at a depth of 6,400 meters, the ROV Hercules captured high-definition footage of an undocumented genus of Bathykorus jellyfish. Exhibiting a spectacular magenta-blue bioluminescence, the organism uses complex light patterns to communicate or attract prey in the eternal darkness of the abyssal zone. The discovery is expected to provide key insights into deep-sea evolutionary biology and chemical adaptations."
-    }
-];
 
 // Headlines to cycle in the ticker tape feed
 const TICKER_HEADLINES = [
@@ -48,15 +11,6 @@ const TICKER_HEADLINES = [
     "Global Press Syndicate launches real-time digital print portal",
     "Urban planners approve Arcadia Phase 2 expansion for late 2026",
     "Oceanography Council recognizes Dr. Webb for deep-sea mapping contributions"
-];
-
-// Set of camera configurations to assign to user uploads
-const USER_MOCK_EXIFS = [
-    "Leica M11 • Summilux 35mm • f/1.4 • 1/250s • ISO 64",
-    "Sony A7R V • FE 24-70mm GM II • f/2.8 • 1/800s • ISO 100",
-    "Hasselblad X2D 100C • XCD 55mm f/2.5 • f/4.0 • 1/125s • ISO 64",
-    "Fujifilm GFX100 II • GF 80mm f/1.7 • f/2.0 • 1/500s • ISO 200",
-    "Canon EOS R3 • RF 50mm f/1.2 • f/1.2 • 1/2000s • ISO 100"
 ];
 
 // App State
@@ -93,7 +47,6 @@ const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const dropZonePrompt = document.getElementById("drop-zone-prompt");
 const dropZonePreview = document.getElementById("drop-zone-preview");
-const imagePreview = document.getElementById("image-preview");
 const removePreviewBtn = document.getElementById("remove-preview-btn");
 
 // Lightbox Elements
@@ -121,10 +74,9 @@ const toastIcon = document.getElementById("toast-icon");
 document.addEventListener("DOMContentLoaded", () => {
     setHeaderDate();
     initTheme();
-    loadStories();
+    loadStories(); // Async fetch and render
     initTickerFeed();
     setupEventListeners();
-    renderGallery();
 });
 
 // Set current date in editorial newspaper format
@@ -136,7 +88,6 @@ function setHeaderDate() {
 
 // Build ticker content with looped scrolling data
 function initTickerFeed() {
-    // Duplicate the news list so that it flows infinitely without gaps
     const doubleHeadlines = [...TICKER_HEADLINES, ...TICKER_HEADLINES];
     tickerFeed.innerHTML = doubleHeadlines.map(headline => `
         <span>${headline}</span>
@@ -144,36 +95,41 @@ function initTickerFeed() {
 }
 
 // ==========================================================================
-// STATE MANAGEMENT & DATA PERSISTENCE
+// BACKEND API CLIENT
 // ==========================================================================
 
-function loadStories() {
-    const localUploads = localStorage.getItem("photo_chronicle_uploads");
-    const parsedUploads = localUploads ? JSON.parse(localUploads) : [];
-    
-    // Combine base files and community uploads
-    // Uploaded stories go first (newest updates first)
-    stories = [...parsedUploads, ...INITIAL_STORIES];
+async function loadStories() {
+    try {
+        const response = await fetch('/api/stories');
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        stories = await response.json();
+        renderGallery();
+    } catch (err) {
+        console.error("Failed to load stories from server:", err);
+        showToast("Press Feed Offline", "Could not fetch the latest news from the server.", true);
+    }
 }
 
-function saveUploadToStorage(newStory) {
-    const localUploads = localStorage.getItem("photo_chronicle_uploads");
-    const parsedUploads = localUploads ? JSON.parse(localUploads) : [];
-    parsedUploads.unshift(newStory); // prepend to community uploads
-    localStorage.setItem("photo_chronicle_uploads", JSON.stringify(parsedUploads));
-}
-
-function deleteStoryFromStorage(id) {
-    const localUploads = localStorage.getItem("photo_chronicle_uploads");
-    if (!localUploads) return;
-    
-    let parsedUploads = JSON.parse(localUploads);
-    parsedUploads = parsedUploads.filter(story => story.id !== id);
-    localStorage.setItem("photo_chronicle_uploads", JSON.stringify(parsedUploads));
-    
-    loadStories();
-    renderGallery();
-    showToast("Story Retracted", "The news card has been archived and removed from the press feed.", false);
+async function deleteStoryFromServer(id, password) {
+    try {
+        const response = await fetch('/api/stories/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, password })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            await loadStories();
+            showToast("Story Retracted", "The news card has been archived and removed from the press feed.", false);
+        } else {
+            throw new Error(result.error || "Retraction rejected");
+        }
+    } catch (err) {
+        console.error("Retraction error:", err);
+        showToast("Retraction Failed", err.message, true);
+    }
 }
 
 // ==========================================================================
@@ -186,13 +142,11 @@ function renderGallery() {
     
     // Filter and Search Stories
     const filteredStories = stories.filter(story => {
-        // Category Filter logic
         const matchesCategory = 
             currentCategoryFilter === "all" || 
             (currentCategoryFilter === "uploaded" && story.isUploaded) ||
             story.category === currentCategoryFilter;
             
-        // Search Filter logic (Headline, journalist, location, category)
         const query = currentSearchQuery.toLowerCase().trim();
         const matchesSearch = 
             !query ||
@@ -205,7 +159,6 @@ function renderGallery() {
         return matchesCategory && matchesSearch;
     });
 
-    // Update Results Summary Bar
     updateResultsMeta(filteredStories.length);
 
     if (filteredStories.length === 0) {
@@ -217,7 +170,6 @@ function renderGallery() {
     filteredStories.forEach((story, index) => {
         const card = document.createElement("article");
         
-        // Define hierarchy: index 0 (the latest/first card in list) is ALWAYS the Hero Card
         let cardHierarchyClass = "standard-card";
         let isHero = false;
         
@@ -225,17 +177,13 @@ function renderGallery() {
             cardHierarchyClass = "hero-card";
             isHero = true;
         } else if (index === 1 && currentCategoryFilter === "all" && !currentSearchQuery) {
-            // Give the second item a sidebar class for newspaper grid aesthetic
             cardHierarchyClass = "sidebar-card";
         }
         
         card.className = `news-card ${cardHierarchyClass}`;
         card.setAttribute("data-id", story.id);
         
-        // Format category name for readability
         const readableCategory = getReadableCategory(story.category);
-        
-        // Dynamic stamp markup for Hero Story
         const stampMarkup = isHero ? `<div class="stamp-sticker">Editor's Choice</div>` : '';
         
         card.innerHTML = `
@@ -257,7 +205,6 @@ function renderGallery() {
             </div>
         `;
         
-        // Add click events to zoom-trigger areas
         const triggers = card.querySelectorAll(".card-img-wrapper, .card-headline, .card-read-more");
         triggers.forEach(el => {
             el.addEventListener("click", () => openLightbox(story));
@@ -333,15 +280,12 @@ function handleFileSelection(files) {
     
     const fileList = Array.from(files);
     
-    // Process files sequentially
     fileList.forEach(file => {
-        // Validate type
         if (!file.type.startsWith("image/")) {
             showToast("Invalid File Type", `File "${file.name}" is not a valid image.`, true);
             return;
         }
         
-        // Validate size (Max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             showToast("File Too Large", `File "${file.name}" exceeds the 5MB size limit.`, true);
             return;
@@ -350,7 +294,6 @@ function handleFileSelection(files) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const base64 = e.target.result;
-            // Avoid duplicates
             if (!uploadedPhotosArray.includes(base64)) {
                 uploadedPhotosArray.push(base64);
                 renderThumbnails();
@@ -380,7 +323,6 @@ function renderThumbnails() {
             </button>
         `;
         
-        // Add click handler to delete a single thumbnail
         thumbWrapper.querySelector(".remove-single-thumb").onclick = (e) => {
             e.stopPropagation();
             removeSinglePhoto(index);
@@ -415,7 +357,6 @@ function clearPhotoSelection() {
 // ==========================================================================
 
 function openLightbox(story) {
-    // Populate items
     lightboxImg.src = story.image;
     lightboxImg.alt = story.title;
     lightboxCategory.textContent = getReadableCategory(story.category);
@@ -426,35 +367,29 @@ function openLightbox(story) {
     lightboxExif.textContent = story.exif;
     lightboxDescription.textContent = story.description;
     
-    // Download link setting
     downloadPhotoBtn.href = story.image;
     downloadPhotoBtn.setAttribute("download", `Chronicle_${story.title.substring(0, 20).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.jpg`);
     
-    // Show/hide delete button depending on if user uploaded it
     if (story.isUploaded) {
         deletePhotoBtn.classList.remove("hidden");
         deletePhotoBtn.onclick = () => {
             const enteredPassword = prompt("Please enter the Retraction Password to delete this story:");
-            if (enteredPassword === null) return; // user clicked Cancel
+            if (enteredPassword === null) return;
             
-            // Allow delete if matches OR if uploader has no password set (legacy protection)
             if (!story.deletePassword) {
                 if (confirm("No retraction password is set for this archive record. Proceed to delete permanently?")) {
                     closeLightbox();
-                    deleteStoryFromStorage(story.id);
+                    deleteStoryFromServer(story.id, "");
                 }
-            } else if (enteredPassword === story.deletePassword) {
-                closeLightbox();
-                deleteStoryFromStorage(story.id);
             } else {
-                showToast("Access Denied", "Incorrect retraction password. Story retraction rejected.", true);
+                closeLightbox();
+                deleteStoryFromServer(story.id, enteredPassword);
             }
         };
     } else {
         deletePhotoBtn.classList.add("hidden");
     }
 
-    // Share button mapping
     sharePhotoBtn.onclick = () => {
         if (navigator.share) {
             navigator.share({
@@ -463,7 +398,6 @@ function openLightbox(story) {
                 url: window.location.href
             }).catch(console.error);
         } else {
-            // Fallback: Copy dummy share link to clipboard
             const dummyLink = `${window.location.origin}/story/${story.id}`;
             navigator.clipboard.writeText(dummyLink).then(() => {
                 showToast("Link Copied", "A news clipping link was copied to your clipboard.", false);
@@ -473,16 +407,15 @@ function openLightbox(story) {
         }
     };
     
-    // Open lightbox
     lightboxModal.classList.add("active");
     lightboxModal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden"; // disable body scrolling
+    document.body.style.overflow = "hidden";
 }
 
 function closeLightbox() {
     lightboxModal.classList.remove("active");
     lightboxModal.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = ""; // restore scrolling
+    document.body.style.overflow = "";
 }
 
 // ==========================================================================
@@ -491,7 +424,6 @@ function closeLightbox() {
 
 let toastTimeout;
 function showToast(title, message, isError = false) {
-    // Reset timeout if already running
     clearTimeout(toastTimeout);
     
     toastTitle.textContent = title;
@@ -511,7 +443,6 @@ function showToast(title, message, isError = false) {
     
     toast.classList.remove("hidden");
     
-    // Hide toast after 4 seconds
     toastTimeout = setTimeout(() => {
         toast.classList.add("hidden");
     }, 4000);
@@ -550,7 +481,7 @@ function updateThemeUI(theme) {
 }
 
 // ==========================================================================
-// FORM SUBMISSION (PUBLISH FLOW)
+// FORM SUBMISSION (PUBLISH FLOW TO BACKEND)
 // ==========================================================================
 
 function openUploadModal() {
@@ -568,12 +499,7 @@ function closeUploadModal() {
     charCounter.textContent = "0";
 }
 
-function getRandomExif() {
-    const randomIndex = Math.floor(Math.random() * USER_MOCK_EXIFS.length);
-    return USER_MOCK_EXIFS[randomIndex];
-}
-
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
     
     if (uploadedPhotosArray.length === 0) {
@@ -588,44 +514,46 @@ function handleFormSubmit(e) {
     const password = document.getElementById("input-password").value;
     const description = textareaDescription.value.trim();
     
-    const today = new Date();
-    const formattedDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const submitBtn = document.getElementById("submit-btn");
+    const originalBtnHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Publishing...`;
     
-    // Loop through all uploaded photos and create a separate news card for each
-    uploadedPhotosArray.forEach((photoBase64, idx) => {
-        const titleSuffix = uploadedPhotosArray.length > 1 ? ` - Frame ${idx + 1}` : '';
-        const storyId = `story-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`;
+    try {
+        const response = await fetch('/api/stories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                headline,
+                photographer,
+                category,
+                location,
+                password,
+                description,
+                photos: uploadedPhotosArray
+            })
+        });
         
-        const newStory = {
-            id: storyId,
-            title: `${headline}${titleSuffix}`,
-            category: category,
-            image: photoBase64,
-            date: formattedDate,
-            photographer: photographer,
-            location: location,
-            exif: getRandomExif(),
-            description: description,
-            deletePassword: password,
-            isUploaded: true
-        };
+        const result = await response.json();
         
-        saveUploadToStorage(newStory);
-    });
-    
-    // Reload state
-    loadStories();
-    
-    // Re-render gallery
-    renderGallery();
-    
-    // Close modal & Notify
-    closeUploadModal();
-    
-    const msg = uploadedPhotosArray.length > 1 
-        ? `${uploadedPhotosArray.length} headlines published successfully to the newspaper feed.` 
-        : `"${headline}" has been published to the newspaper feed.`;
-    showToast("Press Published", msg, false);
+        if (response.ok && result.success) {
+            await loadStories(); // Refresh stories list
+            closeUploadModal();
+            
+            const msg = uploadedPhotosArray.length > 1 
+                ? `${uploadedPhotosArray.length} headlines published successfully to the global feed.` 
+                : `"${headline}" has been published to the global feed.`;
+            showToast("Press Published", msg, false);
+        } else {
+            throw new Error(result.error || "Failed to publish");
+        }
+    } catch (err) {
+        console.error("Publish error:", err);
+        showToast("Publish Failed", err.message, true);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHTML;
+    }
 }
 
 // ==========================================================================
@@ -633,24 +561,19 @@ function handleFormSubmit(e) {
 // ==========================================================================
 
 function setupEventListeners() {
-    // Theme Toggle
     themeToggleBtn.addEventListener("click", toggleTheme);
     
-    // Upload Modal Toggle
     openUploadBtn.addEventListener("click", openUploadModal);
     closeUploadBtn.addEventListener("click", closeUploadModal);
     cancelUploadBtn.addEventListener("click", closeUploadModal);
     
-    // Lightbox modal close triggers
     closeLightboxBtn.addEventListener("click", closeLightbox);
     
-    // Close modals on clicking background backdrop
     window.addEventListener("click", (e) => {
         if (e.target === uploadModal) closeUploadModal();
         if (e.target === lightboxModal) closeLightbox();
     });
 
-    // Close modals on Escape keypress
     window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             closeUploadModal();
@@ -658,20 +581,16 @@ function setupEventListeners() {
         }
     });
     
-    // Category Tabs Filter click
     filterTabs.forEach(tab => {
         tab.addEventListener("click", (e) => {
-            // Set active class
             filterTabs.forEach(t => t.classList.remove("active"));
             e.target.classList.add("active");
             
-            // Set state filter and re-render
             currentCategoryFilter = e.target.getAttribute("data-category");
             renderGallery();
         });
     });
     
-    // Search inputs change
     searchInput.addEventListener("input", (e) => {
         currentSearchQuery = e.target.value;
         if (currentSearchQuery.length > 0) {
@@ -691,19 +610,14 @@ function setupEventListeners() {
     
     resetFiltersBtn.addEventListener("click", resetAllFilters);
     
-    // Form textarea description length character counter
     textareaDescription.addEventListener("input", (e) => {
         charCounter.textContent = e.target.value.length;
     });
     
-    // Form Submission
     uploadForm.addEventListener("submit", handleFormSubmit);
     
-    // --- File Drag & Drop triggers ---
-    // Trigger file selection on click
     dropZone.addEventListener("click", (e) => {
-        // Prevent trigger if clicking on remove button
-        if (e.target.closest("#remove-preview-btn")) return;
+        if (e.target.closest("#remove-preview-btn") || e.target.closest(".remove-single-thumb")) return;
         fileInput.click();
     });
     
@@ -714,11 +628,10 @@ function setupEventListeners() {
     });
     
     removePreviewBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // prevent triggering fileInput click
+        e.stopPropagation();
         clearPhotoSelection();
     });
     
-    // Drag events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, (e) => {
             e.preventDefault();

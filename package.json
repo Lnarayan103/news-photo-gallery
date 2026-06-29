@@ -1,0 +1,14 @@
+{
+  "name": "the-photo-chronicle",
+  "version": "1.0.0",
+  "description": "A premium newspaper-style photojournalism gallery web application with centralized backend uploads",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "author": "Antigravity AI",
+  "license": "ISC"
+}
