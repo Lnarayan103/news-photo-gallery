@@ -93,15 +93,15 @@
                 <div class="form-group full-width">
                     <label class="form-label">Photo Capture</label>
                     <div id="drop-zone" class="drop-zone">
-                        <input type="file" id="file-input" accept="image/*" required style="display: none;">
+                        <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
                         <div id="drop-zone-prompt" class="drop-zone-content">
                             <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
-                            <p class="drop-primary">Drag & Drop photo here, or <span>browse files</span></p>
+                            <p class="drop-primary">Drag & Drop photos here, or <span>browse files</span></p>
                             <p class="drop-secondary">Supports JPEG, PNG, WEBP (Max 5MB)</p>
                         </div>
                         <div id="drop-zone-preview" class="drop-zone-preview-container hidden">
-                            <img id="image-preview" src="" alt="Selected photo preview">
-                            <button type="button" id="remove-preview-btn" class="btn-remove-photo"><i class="fa-solid fa-trash-can"></i> Remove Photo</button>
+                            <div id="thumbnails-preview-list" class="thumbnails-preview-list"></div>
+                            <button type="button" id="remove-preview-btn" class="btn-remove-photo"><i class="fa-solid fa-trash-can"></i> Remove All</button>
                         </div>
                     </div>
                 </div>

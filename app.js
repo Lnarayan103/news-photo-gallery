@@ -63,7 +63,7 @@ const USER_MOCK_EXIFS = [
 let stories = [];
 let currentCategoryFilter = "all";
 let currentSearchQuery = "";
-let uploadedPhotoBase64 = "";
+let uploadedPhotosArray = [];
 
 // DOM Elements
 const galleryGrid = document.getElementById("news-gallery-grid");
@@ -328,38 +328,82 @@ function resetAllFilters() {
 // DRAG AND DROP PHOTO UPLOAD ZONE
 // ==========================================================================
 
-function handleFileSelection(file) {
-    if (!file) return;
+function handleFileSelection(files) {
+    if (!files || files.length === 0) return;
     
-    // Check if the file is an image
-    if (!file.type.startsWith("image/")) {
-        showToast("Invalid File Type", "Please choose an image file (PNG, JPG, WEBP).", true);
-        return;
-    }
+    const fileList = Array.from(files);
     
-    // Check size (Max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        showToast("File Too Large", "Maximum image size allowed is 5MB.", true);
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        uploadedPhotoBase64 = e.target.result;
+    // Process files sequentially
+    fileList.forEach(file => {
+        // Validate type
+        if (!file.type.startsWith("image/")) {
+            showToast("Invalid File Type", `File "${file.name}" is not a valid image.`, true);
+            return;
+        }
         
-        // Show preview in drop-zone
-        imagePreview.src = uploadedPhotoBase64;
-        dropZonePrompt.classList.add("hidden");
-        dropZonePreview.classList.remove("hidden");
-        dropZone.style.borderStyle = "solid";
-    };
-    reader.readAsDataURL(file);
+        // Validate size (Max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("File Too Large", `File "${file.name}" exceeds the 5MB size limit.`, true);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target.result;
+            // Avoid duplicates
+            if (!uploadedPhotosArray.includes(base64)) {
+                uploadedPhotosArray.push(base64);
+                renderThumbnails();
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderThumbnails() {
+    const thumbnailsPreviewList = document.getElementById("thumbnails-preview-list");
+    thumbnailsPreviewList.innerHTML = "";
+    
+    if (uploadedPhotosArray.length === 0) {
+        clearPhotoSelection();
+        return;
+    }
+    
+    uploadedPhotosArray.forEach((photoBase64, index) => {
+        const thumbWrapper = document.createElement("div");
+        thumbWrapper.className = "preview-thumbnail-wrapper";
+        
+        thumbWrapper.innerHTML = `
+            <img src="${photoBase64}" alt="Preview thumbnail">
+            <button type="button" class="remove-single-thumb" data-index="${index}" aria-label="Remove photo">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+        
+        // Add click handler to delete a single thumbnail
+        thumbWrapper.querySelector(".remove-single-thumb").onclick = (e) => {
+            e.stopPropagation();
+            removeSinglePhoto(index);
+        };
+        
+        thumbnailsPreviewList.appendChild(thumbWrapper);
+    });
+    
+    dropZonePrompt.classList.add("hidden");
+    dropZonePreview.classList.remove("hidden");
+    dropZone.style.borderStyle = "solid";
+}
+
+function removeSinglePhoto(index) {
+    uploadedPhotosArray.splice(index, 1);
+    renderThumbnails();
 }
 
 function clearPhotoSelection() {
-    uploadedPhotoBase64 = "";
+    uploadedPhotosArray = [];
     fileInput.value = "";
-    imagePreview.src = "";
+    const thumbnailsPreviewList = document.getElementById("thumbnails-preview-list");
+    if (thumbnailsPreviewList) thumbnailsPreviewList.innerHTML = "";
     dropZonePrompt.classList.remove("hidden");
     dropZonePreview.classList.add("hidden");
     dropZone.style.borderStyle = "dashed";
@@ -532,8 +576,8 @@ function getRandomExif() {
 function handleFormSubmit(e) {
     e.preventDefault();
     
-    if (!uploadedPhotoBase64) {
-        showToast("Photo Missing", "Please select or drop an image for your news article.", true);
+    if (uploadedPhotosArray.length === 0) {
+        showToast("Photo Missing", "Please select or drop at least one image for your news article.", true);
         return;
     }
     
@@ -544,27 +588,32 @@ function handleFormSubmit(e) {
     const password = document.getElementById("input-password").value;
     const description = textareaDescription.value.trim();
     
-    // Format current date nicely
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     
-    // Create new story object with random cool Exif
-    const newStory = {
-        id: `story-${Date.now()}`,
-        title: headline,
-        category: category,
-        image: uploadedPhotoBase64,
-        date: formattedDate,
-        photographer: photographer,
-        location: location,
-        exif: getRandomExif(),
-        description: description,
-        deletePassword: password,
-        isUploaded: true
-    };
+    // Loop through all uploaded photos and create a separate news card for each
+    uploadedPhotosArray.forEach((photoBase64, idx) => {
+        const titleSuffix = uploadedPhotosArray.length > 1 ? ` - Frame ${idx + 1}` : '';
+        const storyId = `story-${Date.now()}-${idx}-${Math.floor(Math.random() * 1000)}`;
+        
+        const newStory = {
+            id: storyId,
+            title: `${headline}${titleSuffix}`,
+            category: category,
+            image: photoBase64,
+            date: formattedDate,
+            photographer: photographer,
+            location: location,
+            exif: getRandomExif(),
+            description: description,
+            deletePassword: password,
+            isUploaded: true
+        };
+        
+        saveUploadToStorage(newStory);
+    });
     
-    // Save to Storage & App State
-    saveUploadToStorage(newStory);
+    // Reload state
     loadStories();
     
     // Re-render gallery
@@ -572,7 +621,11 @@ function handleFormSubmit(e) {
     
     // Close modal & Notify
     closeUploadModal();
-    showToast("Press Headline Published", `"${headline}" has been published to the newspaper feed.`, false);
+    
+    const msg = uploadedPhotosArray.length > 1 
+        ? `${uploadedPhotosArray.length} headlines published successfully to the newspaper feed.` 
+        : `"${headline}" has been published to the newspaper feed.`;
+    showToast("Press Published", msg, false);
 }
 
 // ==========================================================================
@@ -656,7 +709,7 @@ function setupEventListeners() {
     
     fileInput.addEventListener("change", (e) => {
         if (e.target.files.length > 0) {
-            handleFileSelection(e.target.files[0]);
+            handleFileSelection(e.target.files);
         }
     });
     
@@ -689,7 +742,7 @@ function setupEventListeners() {
         const dt = e.dataTransfer;
         const files = dt.files;
         if (files.length > 0) {
-            handleFileSelection(files[0]);
+            handleFileSelection(files);
         }
     }, false);
 }
