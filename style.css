@@ -702,6 +702,7 @@ button, input, select, textarea {
     pointer-events: none;
     transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     padding: 24px;
+    overflow-y: auto; /* enable scrolling when modal content overflows */
 }
 
 .modal-overlay.active {
@@ -723,6 +724,7 @@ button, input, select, textarea {
     box-shadow: var(--shadow-lg);
     transform: translateY(40px) scale(0.98);
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    margin: auto; /* center card automatically and support overflow scrolling */
 }
 
 .modal-overlay.active .modal-card {
@@ -973,6 +975,32 @@ button, input, select, textarea {
     .utility-btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    /* Make publish button float on mobile so it is always accessible */
+    #open-upload-btn {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(157, 42, 27, 0.35);
+        border-color: var(--accent);
+    }
+    
+    #open-upload-btn span {
+        display: none;
+    }
+    
+    #open-upload-btn i {
+        margin: 0;
+        font-size: 1.3rem;
     }
     
     /* Navigation layout changes on mobile */
