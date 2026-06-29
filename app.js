@@ -64,6 +64,11 @@ const downloadPhotoBtn = document.getElementById("download-photo-btn");
 const sharePhotoBtn = document.getElementById("share-photo-btn");
 const deletePhotoBtn = document.getElementById("delete-photo-btn");
 
+// Fullscreen Zoom Elements
+const zoomOverlay = document.getElementById("zoom-overlay");
+const zoomImg = document.getElementById("zoom-img");
+const closeZoomBtn = document.getElementById("close-zoom-btn");
+
 // Toast elements
 const toast = document.getElementById("toast-notification");
 const toastTitle = document.getElementById("toast-title");
@@ -418,6 +423,11 @@ function closeLightbox() {
     document.body.style.overflow = "";
 }
 
+function closeZoomOverlay() {
+    zoomOverlay.classList.remove("active");
+    zoomOverlay.setAttribute("aria-hidden", "true");
+}
+
 // ==========================================================================
 // TOAST NOTIFICATIONS
 // ==========================================================================
@@ -569,15 +579,27 @@ function setupEventListeners() {
     
     closeLightboxBtn.addEventListener("click", closeLightbox);
     
+    // Zoom Overlay triggers
+    lightboxImg.addEventListener("click", () => {
+        zoomImg.src = lightboxImg.src;
+        zoomOverlay.classList.add("active");
+        zoomOverlay.setAttribute("aria-hidden", "false");
+    });
+    
+    closeZoomBtn.addEventListener("click", closeZoomOverlay);
+    zoomImg.addEventListener("click", closeZoomOverlay);
+    
     window.addEventListener("click", (e) => {
         if (e.target === uploadModal) closeUploadModal();
         if (e.target === lightboxModal) closeLightbox();
+        if (e.target === zoomOverlay) closeZoomOverlay();
     });
 
     window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             closeUploadModal();
             closeLightbox();
+            closeZoomOverlay();
         }
     });
     

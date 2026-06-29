@@ -1219,3 +1219,58 @@ button, input, select, textarea {
     background: #ef4444;
     transform: scale(1.15);
 }
+
+/* Fullscreen Image Zoom Overlay */
+.zoom-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(3, 5, 9, 0.98); /* Immersive near-black backdrop */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000; /* above all other elements and modals */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+.zoom-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+#zoom-img {
+    max-width: 98vw;
+    max-height: 98vh;
+    object-fit: contain;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.9);
+    transform: scale(0.95);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: zoom-out;
+}
+.zoom-overlay.active #zoom-img {
+    transform: scale(1);
+}
+.zoom-close-btn {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 1.6rem;
+    cursor: pointer;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition-smooth);
+    z-index: 3010;
+}
+.zoom-close-btn:hover {
+    background-color: var(--accent);
+    transform: scale(1.08);
+}
